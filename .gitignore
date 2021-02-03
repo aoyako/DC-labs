@@ -1,5 +1,5 @@
-.gradle/
-.settings/
-build/
-.vscode/
-.project
+**/.gradle/
+**/.settings/
+**/build/
+**/.vscode/
+**/.project
