@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>Expression.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">task_02</a> &gt; <a href="index.source.html" class="el_package">values</a> &gt; <span class="el_source">Expression.java</span></div><h1>Expression.java</h1><pre class="source lang-java linenums">package values;
+
+import java.util.ArrayList;
+
+import java.util.ArrayList;
+import java.util.*;
+
+public class Expression {
+<span class="pc" id="L9">    Value value = new Value(0);</span>
+<span class="pc" id="L10">    Map&lt;Integer, Unknown&gt; variables = new HashMap&lt;&gt;();</span>
+
+<span class="fc" id="L12">    public Expression() {</span>
+
+<span class="fc" id="L14">    }</span>
+
+    public void add(Value v) {
+<span class="pc bpc" id="L17" title="1 of 2 branches missed.">        if (v.getType() == &quot;value&quot;) {</span>
+<span class="fc" id="L18">            value.add(v);</span>
+<span class="nc bnc" id="L19" title="All 2 branches missed.">        } else if (v.getType() == &quot;variable&quot;) {</span>
+<span class="nc" id="L20">            Unknown var = (Unknown) v;</span>
+<span class="nc bnc" id="L21" title="All 2 branches missed.">            if (var == null) {</span>
+<span class="nc" id="L22">                throw new RuntimeException(&quot;Cannot convert variable&quot;);</span>
+            }
+<span class="nc" id="L24">            Unknown possible = variables.get(var.var_id);</span>
+<span class="nc bnc" id="L25" title="All 2 branches missed.">            if (possible == null) {</span>
+<span class="nc" id="L26">                variables.put(var.var_id, var);</span>
+            } else {
+<span class="nc" id="L28">                possible.multiply(var);</span>
+<span class="nc" id="L29">                variables.put(var.var_id, possible);</span>
+            }
+        }
+<span class="fc" id="L32">    }</span>
+
+    public void multiply(Value v) {
+<span class="fc" id="L35">        value.multiply(v);</span>
+<span class="pc bpc" id="L36" title="1 of 2 branches missed.">        for (Map.Entry&lt;Integer, Unknown&gt; var : variables.entrySet()) {</span>
+<span class="nc" id="L37">            var.getValue().multiply(v);</span>
+<span class="nc" id="L38">        }</span>
+<span class="fc" id="L39">    }</span>
+
+    public void divide(Value v) {
+<span class="fc" id="L42">        value.divide(v);</span>
+<span class="pc bpc" id="L43" title="1 of 2 branches missed.">        for (Map.Entry&lt;Integer, Unknown&gt; var : variables.entrySet()) {</span>
+<span class="nc" id="L44">            var.getValue().divide(v);</span>
+<span class="nc" id="L45">        }</span>
+<span class="fc" id="L46">    }</span>
+
+    public String toString() {
+<span class="fc" id="L49">        String result = value.toString();</span>
+
+<span class="pc bpc" id="L51" title="1 of 2 branches missed.">        for (Map.Entry&lt;Integer, Unknown&gt; var : variables.entrySet()) {</span>
+<span class="nc" id="L52">            result += &quot; + &quot; + var.getValue().toString();</span>
+<span class="nc" id="L53">        }</span>
+<span class="fc" id="L54">        return result;</span>
+    }
+    
+<span class="nc" id="L57">    public Expression(Expression e) {</span>
+<span class="nc" id="L58">        this.value = new Value(e.value);</span>
+<span class="nc bnc" id="L59" title="All 2 branches missed.">        for (Map.Entry&lt;Integer, Unknown&gt; var : e.variables.entrySet()) {</span>
+<span class="nc" id="L60">            this.variables.put(var.getKey(), new Unknown(var.getValue()));</span>
+<span class="nc" id="L61">        }</span>
+<span class="nc" id="L62">    }</span>
+
+    public Value getValue() {
+<span class="fc" id="L65">        return value;</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.5.201910111838</span></div></body></html>

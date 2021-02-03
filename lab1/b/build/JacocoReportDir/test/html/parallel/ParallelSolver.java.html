@@ -1,0 +1,267 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ParallelSolver.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">task_02</a> &gt; <a href="index.source.html" class="el_package">parallel</a> &gt; <span class="el_source">ParallelSolver.java</span></div><h1>ParallelSolver.java</h1><pre class="source lang-java linenums">package parallel;
+
+import java.util.concurrent.Semaphore;
+import java.util.concurrent.locks.*;
+import java.util.concurrent.*;
+
+import solver.SolverInterface;
+import values.*;
+import java.util.concurrent.TimeUnit;
+
+<span class="fc" id="L11">class Container {</span>
+<span class="fc" id="L12">    public volatile Value am = null;</span>
+<span class="fc" id="L13">    public volatile Value bm = null;</span>
+
+<span class="fc" id="L15">    public volatile Value ksim = null;</span>
+<span class="fc" id="L16">    public volatile Value etam = null;</span>
+
+<span class="fc" id="L18">    CyclicBarrier barrier = new CyclicBarrier(2);</span>
+}
+
+class TopSolver implements Runnable {
+<span class="fc" id="L22">    Value minus_one = new Value(-1);</span>
+<span class="fc" id="L23">    Value one = new Value(1);</span>
+<span class="fc" id="L24">    Value[][] equations = null;</span>
+<span class="fc" id="L25">    Value[] values = null;</span>
+<span class="fc" id="L26">    Expression[] result = null;</span>
+<span class="fc" id="L27">    Container c = null;</span>
+<span class="fc" id="L28">    CyclicBarrier bar = null;</span>
+
+<span class="fc" id="L30">    TopSolver(Value[][] eq, Value[] val, Expression[] res, Container cc) {</span>
+<span class="fc" id="L31">        equations = eq;</span>
+<span class="fc" id="L32">        values = val;</span>
+<span class="fc" id="L33">        result = res;</span>
+<span class="fc" id="L34">        c = cc;</span>
+<span class="fc" id="L35">    }</span>
+
+    public void run() {
+<span class="fc" id="L38">        System.out.println(&quot;top start&quot;);</span>
+        // c.topval.lock();
+        // c.started_top = true;
+<span class="fc" id="L41">        Value[] ai_saved = new Value[equations.length];</span>
+<span class="fc" id="L42">        Value[] bi_saved = new Value[equations.length];</span>
+
+<span class="fc" id="L44">        Value ai = new Value(equations[0][1]);</span>
+<span class="fc" id="L45">        ai.multiply(minus_one);</span>
+<span class="fc" id="L46">        ai.divide(equations[0][0]);</span>
+
+<span class="fc" id="L48">        Value bi = new Value(values[0]);</span>
+<span class="fc" id="L49">        bi.divide(equations[0][0]);</span>
+
+<span class="fc" id="L51">        ai_saved[0] = new Value(ai);</span>
+<span class="fc" id="L52">        bi_saved[0] = new Value(bi);</span>
+
+<span class="fc" id="L54">        int index = 1;</span>
+<span class="fc bfc" id="L55" title="All 2 branches covered.">        while (index &lt;= equations.length/2) {</span>
+<span class="fc" id="L56">            Value temp = new Value(equations[index][0]);</span>
+<span class="fc" id="L57">            temp.multiply(ai_saved[index-1]);</span>
+<span class="fc" id="L58">            temp.add(equations[index][1]);</span>
+
+<span class="fc" id="L60">            ai = new Value(equations[index][2]);</span>
+<span class="fc" id="L61">            ai.multiply(minus_one);</span>
+<span class="fc" id="L62">            ai.divide(temp);</span>
+
+<span class="fc" id="L64">            bi = new Value(equations[index][0]);</span>
+<span class="fc" id="L65">            bi.multiply(bi_saved[index-1]);</span>
+<span class="fc" id="L66">            bi.multiply(minus_one);</span>
+<span class="fc" id="L67">            bi.add(values[index]);</span>
+<span class="fc" id="L68">            bi.divide(temp);</span>
+
+<span class="fc" id="L70">            ai_saved[index] = new Value(ai);</span>
+<span class="fc" id="L71">            bi_saved[index] = new Value(bi);</span>
+
+<span class="fc" id="L73">            index++;</span>
+<span class="fc" id="L74">        }</span>
+
+<span class="fc" id="L76">        index--;</span>
+<span class="fc" id="L77">        c.am = ai;</span>
+<span class="fc" id="L78">        c.bm = bi;</span>
+
+        try {
+<span class="fc" id="L81">            c.barrier.await();</span>
+<span class="nc" id="L82">        } catch (Exception err) {</span>
+<span class="nc" id="L83">            System.out.println(err);</span>
+<span class="fc" id="L84">        }</span>
+        // try {
+        //     TimeUnit.SECONDS.sleep(2);
+        // } catch (Exception err) {
+
+        // }
+        // while (!c.started_bot) {
+        //     //         try {
+        //     // TimeUnit.SECONDS.sleep(2);
+        //     // } catch (Exception err) {
+        //     // }
+        // }
+
+        // c.botval.lock();
+        // System.out.println(&quot;top&quot;);
+
+<span class="fc" id="L100">        Value temp = new Value(c.ksim);</span>
+<span class="fc" id="L101">        temp.multiply(ai_saved[index-1]);</span>
+<span class="fc" id="L102">        temp.multiply(minus_one);</span>
+<span class="fc" id="L103">        temp.add(one);</span>
+        
+<span class="fc" id="L105">        result[index] = new Expression();</span>
+<span class="fc" id="L106">        result[index].add(c.ksim);</span>
+<span class="fc" id="L107">        result[index].multiply(bi_saved[index-1]);</span>
+<span class="fc" id="L108">        result[index].add(c.etam);</span>
+<span class="fc" id="L109">        result[index].divide(temp);</span>
+<span class="fc" id="L110">        index--;</span>
+
+<span class="fc" id="L112">        result[index] = new Expression();</span>
+<span class="fc" id="L113">        result[index].add(c.etam);</span>
+<span class="fc" id="L114">        result[index].multiply(ai_saved[index]);</span>
+<span class="fc" id="L115">        result[index].add(bi_saved[index]);</span>
+<span class="fc" id="L116">        result[index].divide(temp);</span>
+<span class="fc" id="L117">        index--;</span>
+
+        try {
+<span class="fc" id="L120">            c.barrier.await();</span>
+<span class="nc" id="L121">        } catch (Exception err) {</span>
+<span class="nc" id="L122">            System.out.println(err);</span>
+<span class="fc" id="L123">        }</span>
+
+
+        // c.topval.unlock();
+<span class="fc" id="L127">        System.out.println(&quot;top&quot;);</span>
+
+<span class="fc bfc" id="L129" title="All 2 branches covered.">        while (index &gt;= 0) {</span>
+<span class="fc" id="L130">            result[index] = new Expression();</span>
+<span class="fc" id="L131">            result[index].add(ai_saved[index]);</span>
+<span class="fc" id="L132">            result[index].multiply(result[index+1].getValue());</span>
+<span class="fc" id="L133">            result[index].add(bi_saved[index]);</span>
+<span class="fc" id="L134">            index--;</span>
+        }
+        
+        // try {
+        //     bar.await();
+        // } catch (BrokenBarrierException exc) {
+        //     System.out.println(exc);
+        // } catch (InterruptedException exc) {
+        //     System.out.println(exc);
+        // }
+<span class="fc" id="L144">        System.out.println(&quot;top end&quot;);</span>
+<span class="fc" id="L145">    }</span>
+}
+
+class BotSolver implements Runnable {
+<span class="fc" id="L149">    Value minus_one = new Value(-1);</span>
+<span class="fc" id="L150">    Value[][] equations = null;</span>
+<span class="fc" id="L151">    Value[] values = null;</span>
+<span class="fc" id="L152">    Expression[] result = null;</span>
+<span class="fc" id="L153">    Container c = null;</span>
+
+<span class="fc" id="L155">    BotSolver(Value[][] eq, Value[] val, Expression[] res, Container cc) {</span>
+<span class="fc" id="L156">        equations = eq;</span>
+<span class="fc" id="L157">        values = val;</span>
+<span class="fc" id="L158">        result = res;</span>
+<span class="fc" id="L159">        c = cc;</span>
+<span class="fc" id="L160">    }</span>
+
+    public void run() {
+<span class="fc" id="L163">        Value[] ksii_saved = new Value[equations.length];</span>
+<span class="fc" id="L164">        Value[] etai_saved = new Value[equations.length];</span>
+
+<span class="fc" id="L166">        int index = equations.length - 1;</span>
+
+<span class="fc" id="L168">        Value ksii = new Value(equations[index][0]);</span>
+<span class="fc" id="L169">        ksii.multiply(minus_one);</span>
+<span class="fc" id="L170">        ksii.divide(equations[index][1]);</span>
+
+<span class="fc" id="L172">        Value etai = new Value(values[index]);</span>
+<span class="fc" id="L173">        etai.divide(equations[index][1]);</span>
+
+<span class="fc" id="L175">        ksii_saved[index] = new Value(ksii);</span>
+<span class="fc" id="L176">        etai_saved[index] = new Value(etai);</span>
+
+<span class="fc" id="L178">        index--;</span>
+
+<span class="fc bfc" id="L180" title="All 2 branches covered.">        while (index &gt;= equations.length/2) {</span>
+            // System.out.printf(&quot;looping result %d : ksi: %s, eta: %s%n&quot;, index, ksii_saved[index+1], etai_saved[index+1]);
+<span class="fc" id="L182">            Value temp = new Value(equations[index][2]);</span>
+<span class="fc" id="L183">            temp.multiply(ksii_saved[index+1]);</span>
+<span class="fc" id="L184">            temp.add(equations[index][1]);</span>
+
+<span class="fc" id="L186">            ksii = new Value(equations[index][0]);</span>
+<span class="fc" id="L187">            ksii.multiply(minus_one);</span>
+<span class="fc" id="L188">            ksii.divide(temp);</span>
+
+<span class="fc" id="L190">            etai = new Value(equations[index][2]);</span>
+<span class="fc" id="L191">            etai.multiply(etai_saved[index+1]);</span>
+<span class="fc" id="L192">            etai.multiply(minus_one);</span>
+<span class="fc" id="L193">            etai.add(values[index]);</span>
+<span class="fc" id="L194">            etai.divide(temp);</span>
+
+<span class="fc" id="L196">            ksii_saved[index] = new Value(ksii);</span>
+<span class="fc" id="L197">            etai_saved[index] = new Value(etai);</span>
+
+<span class="fc" id="L199">            index--;</span>
+<span class="fc" id="L200">        }</span>
+
+<span class="fc" id="L202">        c.etam = etai;</span>
+<span class="fc" id="L203">        c.ksim = ksii;</span>
+
+
+        try {
+<span class="fc" id="L207">            c.barrier.await();</span>
+<span class="nc" id="L208">        } catch (Exception err) {</span>
+<span class="nc" id="L209">            System.out.println(err);</span>
+<span class="fc" id="L210">        }</span>
+        try {
+<span class="fc" id="L212">            c.barrier.await();</span>
+<span class="nc" id="L213">        } catch (Exception err) {</span>
+<span class="nc" id="L214">            System.out.println(err);</span>
+<span class="fc" id="L215">        }</span>
+
+        // c.botval.unlock();
+        // while (!c.started_top) {
+
+        // }
+        // c.topval.lock();
+<span class="fc" id="L222">        System.out.println(&quot;bot&quot;);</span>
+
+<span class="fc" id="L224">        index++;</span>
+<span class="fc" id="L225">        index++;</span>
+<span class="fc bfc" id="L226" title="All 2 branches covered.">        while (index &lt; equations.length) {</span>
+            // System.out.printf(&quot;looping result %d : ksi: %s, eta: %s, value: %s%n&quot;, index, ksii_saved[index], etai_saved[index], result[index-1].getValue());
+<span class="fc" id="L228">            result[index] = new Expression();</span>
+<span class="fc" id="L229">            result[index].add(ksii_saved[index]);</span>
+<span class="fc" id="L230">            result[index].multiply(result[index-1].getValue());</span>
+<span class="fc" id="L231">            result[index].add(etai_saved[index]);</span>
+<span class="fc" id="L232">            index++;</span>
+        }
+
+        // try {
+        //     bar.await();
+        // } catch (BrokenBarrierException exc) {
+        //     System.out.println(exc);
+        // } catch (InterruptedException exc) {
+        //     System.out.println(exc);
+        // }
+<span class="fc" id="L242">        System.out.println(&quot;bot end&quot;);</span>
+<span class="fc" id="L243">    }</span>
+}
+
+<span class="fc" id="L246">public class ParallelSolver implements SolverInterface {</span>
+    public Expression[] solve(Value[][] equations, Value[] valuesss) {
+<span class="fc" id="L248">        Expression[] result = new Expression[equations.length];</span>
+
+<span class="fc" id="L250">        Container c = new Container();</span>
+
+<span class="fc" id="L252">        Thread top = new Thread(new TopSolver(equations, valuesss, result, c));</span>
+<span class="fc" id="L253">        Thread bot = new Thread(new BotSolver(equations, valuesss, result, c));</span>
+<span class="fc" id="L254">        top.start();</span>
+<span class="fc" id="L255">        bot.start();</span>
+
+        try {
+<span class="fc" id="L258">            top.join();</span>
+<span class="fc" id="L259">            bot.join();</span>
+<span class="nc" id="L260">        } catch (Exception err) {</span>
+<span class="nc" id="L261">            System.out.println(err);</span>
+<span class="fc" id="L262">        }</span>
+
+<span class="fc" id="L264">        return result;</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.5.201910111838</span></div></body></html>

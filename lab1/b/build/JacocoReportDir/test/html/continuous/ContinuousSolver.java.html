@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ContinuousSolver.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">task_02</a> &gt; <a href="index.source.html" class="el_package">continuous</a> &gt; <span class="el_source">ContinuousSolver.java</span></div><h1>ContinuousSolver.java</h1><pre class="source lang-java linenums">package continuous;
+
+import javax.management.RuntimeErrorException;
+
+import solver.SolverInterface;
+import values.*;
+
+<span class="fc" id="L8">public class ContinuousSolver implements SolverInterface {</span>
+    public Expression[] solve(Value[][] equation, Value[] values) {
+<span class="fc" id="L10">        Expression[] result = new Expression[equation.length];</span>
+
+<span class="fc" id="L12">        Value[] ai_saved = new Value[equation.length];</span>
+<span class="fc" id="L13">        Value[] bi_saved = new Value[equation.length];</span>
+
+<span class="fc" id="L15">        Value minus_one = new Value(-1);</span>
+<span class="fc" id="L16">        Value ai = new Value(equation[0][1]);</span>
+<span class="fc" id="L17">        ai.multiply(minus_one);</span>
+<span class="fc" id="L18">        ai.divide(equation[0][0]);</span>
+
+<span class="fc" id="L20">        Value bi = new Value(values[0]);</span>
+<span class="fc" id="L21">        bi.divide(equation[0][0]);</span>
+
+<span class="fc" id="L23">        int index = 0;</span>
+<span class="fc" id="L24">        ai_saved[index] = new Value(ai);</span>
+<span class="fc" id="L25">        bi_saved[index] = new Value(bi);</span>
+<span class="fc" id="L26">        index++;</span>
+
+<span class="fc bfc" id="L28" title="All 2 branches covered.">        while (index &lt; equation.length) {</span>
+            // System.out.printf(&quot;looping result %d : ai: %s, bi: %s%n&quot;, index, ai_saved[index-1], bi_saved[index-1]);
+<span class="fc" id="L30">            Value temp = new Value(equation[index][0]);</span>
+<span class="fc" id="L31">            temp.multiply(ai_saved[index-1]);</span>
+<span class="fc" id="L32">            temp.add(equation[index][1]);</span>
+            
+<span class="fc" id="L34">            ai = new Value(equation[index][2]);</span>
+<span class="fc" id="L35">            ai.multiply(minus_one);</span>
+<span class="fc" id="L36">            ai.divide(temp);</span>
+
+<span class="fc" id="L38">            bi = new Value(equation[index][0]);</span>
+<span class="fc" id="L39">            bi.multiply(bi_saved[index-1]);</span>
+<span class="fc" id="L40">            bi.multiply(minus_one);</span>
+<span class="fc" id="L41">            bi.add(values[index]);</span>
+<span class="fc" id="L42">            bi.divide(temp);</span>
+
+<span class="fc" id="L44">            ai_saved[index] = new Value(ai);</span>
+<span class="fc" id="L45">            bi_saved[index] = new Value(bi);</span>
+<span class="fc" id="L46">            index++;</span>
+<span class="fc" id="L47">        }</span>
+
+<span class="fc" id="L49">        index = equation.length - 1;</span>
+<span class="fc" id="L50">        result[equation.length - 1] = new Expression();</span>
+<span class="fc" id="L51">        result[equation.length - 1].add(bi_saved[index]);</span>
+<span class="fc" id="L52">        index--;</span>
+<span class="fc bfc" id="L53" title="All 2 branches covered.">        while (index &gt;= 0) {</span>
+<span class="fc" id="L54">            result[index] = new Expression();</span>
+<span class="fc" id="L55">            result[index].add(ai_saved[index]);</span>
+<span class="fc" id="L56">            result[index].multiply(result[index+1].getValue());</span>
+<span class="fc" id="L57">            result[index].add(bi_saved[index]);</span>
+<span class="fc" id="L58">            index--;</span>
+        }
+
+<span class="fc" id="L61">        return result;</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.5.201910111838</span></div></body></html>
