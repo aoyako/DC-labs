@@ -3,3 +3,6 @@
 **/build/
 **/.vscode/
 **/.project
+**/bin/
+**/gradle.propertires
+**/.classpath

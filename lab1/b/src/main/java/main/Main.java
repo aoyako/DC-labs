@@ -6,8 +6,7 @@ import java.awt.event.*;
 import java.util.concurrent.*;
 
 class GoToPos extends Thread {
-    private JSlider sl;
-    private boolean dead = false;
+    private volatile JSlider sl;
     private int pos;
 
     public GoToPos(JSlider sl, int pos) {
@@ -15,17 +14,9 @@ class GoToPos extends Thread {
         this.pos = pos;
     }
 
-    public void kill() {
-        dead = true;
-    }
-
     @Override
     public void run() {
-        while (true) {
-            if (dead) {
-                return;
-            }
-
+        while (!this.isInterrupted()) {
             synchronized(sl) {
                 int currentState = sl.getValue();
                 if (currentState > pos) {
@@ -38,8 +29,8 @@ class GoToPos extends Thread {
 
             try {
                 Thread.sleep(200/Thread.currentThread().getPriority());
-            } catch (Exception err) {
-
+            } catch (InterruptedException err) {
+                return;
             }
         }
     }
@@ -133,7 +124,7 @@ public class Main {
                 }
 
                 blockedStop.setEnabled(true);
-                tw.thread.kill();
+                tw.thread.interrupt();
 
                 workingThreadID = 0;
 

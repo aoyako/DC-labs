@@ -5,7 +5,7 @@ import javax.swing.event.*;
 import java.awt.event.*;
 
 class GoTo20 implements Runnable {
-    private JSlider sl;
+    private volatile JSlider sl;
 
     public GoTo20(JSlider sl) {
         this.sl = sl;
@@ -23,19 +23,18 @@ class GoTo20 implements Runnable {
                 }
                 sl.setValue(currentState);
             }
-            // System.out.println("Hello");
 
             try {
                 Thread.sleep(200/Thread.currentThread().getPriority());
             } catch (Exception err) {
-
+                return;
             }
         }
     }
 }
 
 class GoTo90 implements Runnable {
-    private JSlider sl;
+    private volatile JSlider sl;
 
     public GoTo90(JSlider sl) {
         this.sl = sl;
@@ -53,12 +52,11 @@ class GoTo90 implements Runnable {
                 }
                 sl.setValue(currentState);
             }
-            // System.out.println("Hello");
 
             try {
                 Thread.sleep(200/Thread.currentThread().getPriority());
             } catch (Exception err) {
-
+                return;
             }
         }
     }
@@ -117,6 +115,9 @@ public class Main {
             new ActionListener() {
                 @Override
                 public void actionPerformed(ActionEvent evt) {
+                    thread1.setDaemon(true);
+                    thread2.setDaemon(true);
+
                     thread1.start();
                     thread2.start();
                 }
