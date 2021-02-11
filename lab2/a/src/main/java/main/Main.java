@@ -6,16 +6,20 @@ import java.util.concurrent.atomic.*;
 
 class MySyncronized {
 
-    AtomicInteger indicator = new AtomicInteger(0);
+    // AtomicInteger indicator = new AtomicInteger(0);
+    // Object waiter = new Object();
+    Semaphore sync = new Semaphore(1);
 
     public void lock() {
-        while (!indicator.compareAndSet(0, 1)) {
+        try {
+            sync.acquire();
+        } catch (InterruptedException err) {
+            System.err.println(err);
         }
     }
 
     public void unlock() {
-        while (!indicator.compareAndSet(1, 0)) {
-        }
+        sync.release();
     }
 }
 
@@ -77,6 +81,8 @@ class Bee extends Thread {
                         if (field[i][j] == 1) {
                             System.out.println(name + " found bear at " + String.valueOf(i) + "," + String.valueOf(j));
                             queen.Found();
+                            System.out.println(name + " finishes");
+                            return;
                         }
                     }
                 }
