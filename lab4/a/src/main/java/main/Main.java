@@ -1,0 +1,290 @@
+package main;
+
+import java.util.LinkedList;
+import java.util.Random;
+import java.util.concurrent.Semaphore;
+import java.util.concurrent.locks.ReadWriteLock;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
+import java.lang.*;
+
+
+class Path {
+    public Path(Node n, int c) {
+        node = n;
+        cost = c;
+    }
+
+    Node node;
+    int cost;
+}
+
+class Node {
+    boolean checked = false;
+    LinkedList<Path> neighbours = new LinkedList<>();
+
+    public void AddPath(Node n, int c) {
+        neighbours.add(new Path(n, c));
+    }
+
+    public void RemovePath(Node n) {
+        for (int i = 0; i < neighbours.size(); i++) {
+            if (neighbours.get(i).node == n) {
+                neighbours.remove(i);
+            }
+        }
+    }
+
+    public int getMinCost(Node n) {
+        if (this == n) {
+            return 0;
+        }
+
+        checked = true;
+
+        int minCost = Integer.MAX_VALUE;
+
+        for (int i = 0; i < neighbours.size(); i++) {
+            Node nn = neighbours.get(i).node;
+            if (!nn.checked) {
+                int neighbour = nn.getMinCost(n);
+                int len = -1;
+                if (neighbour == -1) {
+                    len = Integer.MAX_VALUE;
+                } else {
+                    len = neighbour + neighbours.get(i).cost;
+                }
+                if (minCost > len) {
+                    minCost = len;
+                }
+            }
+        }
+
+        checked = false;
+        if (minCost == Integer.MAX_VALUE) {
+            return -1;
+        }
+
+        // System.out.println(minCost)
+        return minCost;
+    }
+
+    public Node GetNode(int ind) {
+        return neighbours.get(ind).node;
+    }
+
+    public int GetSize() {
+        return neighbours.size(); 
+    }
+
+    public void ChangeCost(int ind, int cost) {
+        neighbours.get(ind).cost += cost;
+    }
+}
+
+class Graph {
+    LinkedList<Node> cities = new LinkedList<>();
+
+    public Node AddNode() {
+        Node n = new Node();
+        cities.add(n);
+        return n;
+    }
+
+    public void RemoveNode(Node n) {
+        for (int i = 0; i < cities.size(); i++) {
+            cities.get(i).RemovePath(n);
+            if (cities.get(i) == n) {
+                cities.remove(i);
+            }
+        }
+    }
+
+    public Node GetNode(int ind) {
+        return cities.get(ind);
+    }
+
+    public int GetSize() {
+        return cities.size();
+    }
+}
+
+class CostChanger extends Thread {
+    Graph graph;
+    ReentrantReadWriteLock lock;
+
+    public CostChanger(Graph g, ReentrantReadWriteLock l) {
+        graph = g;
+        lock = l;
+    }
+
+    public void run() {
+        try {
+            while (true) {
+                Thread.sleep(3000);
+
+                lock.writeLock().lock();
+
+                Random r = new Random();
+
+                int id = r.nextInt(graph.GetSize());
+                Node n = graph.GetNode(id);
+
+                if (n.GetSize() >= 1) {
+                    int nid = r.nextInt(n.GetSize());
+                    n.ChangeCost(nid, r.nextInt(10));
+                    System.out.println("changed cost");
+                }
+
+                lock.writeLock().unlock();
+            }
+        } catch (Exception err) {
+            System.err.println(err);
+        }
+    }
+}
+
+class PathChanger extends Thread {
+    Graph graph;
+    ReentrantReadWriteLock lock;
+
+    public PathChanger(Graph g, ReentrantReadWriteLock l) {
+        graph = g;
+        lock = l;
+    }
+
+    public void run() {
+        try {
+            while (true) {
+                Thread.sleep(3000);
+                Random r = new Random();
+                
+                boolean toDo = r.nextBoolean();
+
+                lock.writeLock().lock();
+                
+                if (toDo) {
+                    int ida = r.nextInt(graph.GetSize());
+                    int idb = r.nextInt(graph.GetSize());
+
+                    Node na = graph.GetNode(ida);
+                    Node nb = graph.GetNode(idb);
+
+                    na.AddPath(nb, 2);
+                    nb.AddPath(na, 2);
+                }
+                else {
+                    int ida = r.nextInt(graph.GetSize());
+                    Node na = graph.GetNode(ida);
+
+                    if (na.GetSize() >= 3) {
+
+                        int idb = r.nextInt(na.GetSize());
+                        Node nb = na.GetNode(idb);
+
+                        na.RemovePath(nb);
+                        nb.RemovePath(na);
+                    }
+                }
+
+                System.out.println("changed path");
+
+                lock.writeLock().unlock();
+            }
+        } catch (Exception err) {
+            System.err.println(err);
+        }
+    }
+}
+
+class CityChanger extends Thread {
+    Graph graph;
+    ReentrantReadWriteLock lock;
+
+    public CityChanger(Graph g, ReentrantReadWriteLock l) {
+        graph = g;
+        lock = l;
+    }
+
+    public void run() {
+        try {
+            while (true) {
+                Thread.sleep(5000);
+                Random r = new Random();
+                
+                boolean toDo = r.nextBoolean();
+
+                lock.writeLock().lock();
+                
+                if (toDo) {
+                    graph.AddNode();
+                } else {
+                    if (graph.GetSize() >= 3) {
+                        int ida = r.nextInt(graph.GetSize());
+                        graph.RemoveNode(graph.GetNode(ida));
+                    }
+                }
+
+                lock.writeLock().unlock();
+
+                System.out.println("changed city");
+            }
+        } catch (Exception err) {
+            System.err.println(err);
+        }
+    }
+}
+
+class PathCalculator extends Thread {
+    Graph graph;
+    ReentrantReadWriteLock lock;
+
+    public PathCalculator(Graph g, ReentrantReadWriteLock l) {
+        graph = g;
+        lock = l;
+    }
+
+    public void run() {
+        try {
+            while (true) {
+                Thread.sleep(1000);
+                Random r = new Random();
+                
+                boolean toDo = r.nextBoolean();
+
+                lock.readLock().lock();
+                
+                int ida = r.nextInt(graph.GetSize());
+                int idb = r.nextInt(graph.GetSize());
+
+                Node na = graph.GetNode(ida);
+                Node nb = graph.GetNode(idb);
+
+                System.out.println(na.getMinCost(nb));
+
+                
+                lock.readLock().unlock();
+            }
+        } catch (Exception err) {
+            System.err.println(err);
+        }
+    }
+}
+
+public class Main {
+    public static void main(String[] args) {
+        Graph g = new Graph();
+        g.AddNode();
+        g.AddNode();
+        ReentrantReadWriteLock lock = new ReentrantReadWriteLock();
+
+        PathCalculator p = new PathCalculator(g, lock);
+        CityChanger cc = new CityChanger(g, lock);
+        CostChanger costc = new CostChanger(g, lock);
+        PathChanger pc = new PathChanger(g, lock);
+
+        p.start();
+        cc.start();
+        costc.start();
+        pc.start();
+    }
+}
